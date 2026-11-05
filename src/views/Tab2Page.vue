@@ -12,12 +12,40 @@
         </ion-toolbar>
       </ion-header>
 
-      <ExploreContainer name="Tab 2 page" />
+      <ion-list>
+        <ion-item v-for="post in posts" :key="post.id">
+          <ion-label>
+            <h2>{{ post.title }}</h2>
+            <p>{{ post.body }}</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent } from '@ionic/vue';
-import ExploreContainer from '@/components/ExploreContainer.vue';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonLabel } from '@ionic/vue';
+import { ref } from 'vue';
+
+type Posts = {
+  id: number;
+  title: string;
+  body: string;
+};
+
+const posts = ref<Posts[]>([]);
+
+function cargarPosts(){
+
+  fetch('https://jsonplaceholder.typicode.com/posts')
+  .then(response => response.json())
+  .then(json => {
+    console.log(json);
+    posts.value = json;
+
+  })
+
+}
+cargarPosts();
 </script>
