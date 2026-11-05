@@ -57,6 +57,7 @@
         </ion-button>
       </form>
 
+      <!-- Post creado -->
       <ion-card v-if="postCreado">
         <ion-card-header>
           <ion-card-subtitle>Post creado (ID: {{ postCreado.id }})</ion-card-subtitle>
@@ -65,6 +66,17 @@
         <ion-card-content>
           <p>{{ postCreado.body }}</p>
           <small>Usuario: {{ postCreado.userId }}</small>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Código QR -->
+      <ion-card v-if="qrDataUrl">
+        <ion-card-header>
+          <ion-card-subtitle>Código del post</ion-card-subtitle>
+          <ion-card-title>{{ codigoTexto }}</ion-card-title>
+        </ion-card-header>
+        <ion-card-content class="ion-text-center">
+          <img :src="qrDataUrl" alt="Código QR" class="qr" />
         </ion-card-content>
       </ion-card>
 
@@ -85,6 +97,7 @@ import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonInput, IonTextarea,
   IonButton, IonSpinner, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCardContent, IonToast,
 } from '@ionic/vue';
+import QRCode from 'qrcode';
 
 interface Post {
   id?: number;
@@ -103,6 +116,9 @@ const loading = ref(false);
 const postCreado = ref<Post | null>(null);
 const toast = reactive({ open: false, message: '', color: 'success' });
 
+const qrDataUrl = ref('');
+const codigoTexto = ref('');
+
 const formValido = computed(
   () => form.title.trim() !== '' && form.body.trim() !== '' && form.userId > 0
 );
@@ -111,6 +127,16 @@ const mostrarToast = (message: string, color: 'success' | 'danger') => {
   toast.message = message;
   toast.color = color;
   toast.open = true;
+};
+
+const generarQR = async (texto: string) => {
+  try {
+    codigoTexto.value = texto;
+    qrDataUrl.value = await QRCode.toDataURL(texto, { width: 300, margin: 2 });
+  } catch (error) {
+    console.error('Error generando QR:', error);
+    mostrarToast('No se pudo generar el QR', 'danger');
+  }
 };
 
 const crearPost = async () => {
@@ -132,7 +158,10 @@ const crearPost = async () => {
 
     if (!response.ok) throw new Error(`Error ${response.status}`);
 
-    postCreado.value = await response.json();
+    const data: Post = await response.json();
+    postCreado.value = data;
+
+    await generarQR(`POST-${data.id}`);
     mostrarToast('Post creado correctamente', 'success');
 
     // Limpiar formulario
@@ -146,3 +175,10 @@ const crearPost = async () => {
   }
 };
 </script>
+
+<style scoped>
+.qr {
+  width: 100%;
+  max-width: 300px;
+}
+</style>
